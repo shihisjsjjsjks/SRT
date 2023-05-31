@@ -87,5 +87,7 @@ if __name__ == '__main__':
     print('开始计算')
     print('正在计算转录组')
     file_path1 = r'volcanic\trans_result_sep_latter.xlsx'
+    # 这里可能需要调整读入文件'trans_result_sep_latter.xlsx'的路径
     save_path1 = 'volcanic\cate_res_trans_sep_latter.xlsx'
+    # 这里可能需要调整输出文件'cate_res_trans_sep_latter.xlsx'的路径
     res_output(file_path1,save_path1)
