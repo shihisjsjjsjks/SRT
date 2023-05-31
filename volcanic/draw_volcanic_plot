@@ -118,8 +118,11 @@ if __name__ == '__main__':
     print('='*80)
     print('开始绘制转录组')
     parent_dir = 'volcanic_data'
+    # 这里是创建一个新的用于储存图片的文件夹
     excel_name = 'volcanic/cate_res_trans_sep_latter.xlsx'
+    # 这里的文件调用'cate_res_trans_sep_latter.xlsx'路径可能需要修改
     file_name = 'dotplot/cate_res_trans_note.xlsx'
+    # 这里的文件调用'cate_res_trans_note.xlsx'路径可能需要修改
     excel_type = 'trans'
     main(excel_name, excel_type, file_name)
     print('='*80)
