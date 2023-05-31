@@ -117,7 +117,7 @@ def get_both_annotation(file_name):
 if __name__ == '__main__':
     print('='*80)
     print('开始绘制转录组')
-    excel_name = 'cate_res_trans_sep_latter.xlsx'
+    excel_name = 'volcanic/cate_res_trans_sep_latter.xlsx'
     file_name = 'dotplot/cate_res_trans_note.xlsx'
     excel_type = 'trans'
     main(excel_name, excel_type, file_name)
