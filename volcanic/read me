@@ -1,0 +1,9 @@
+In order to draw volcanic plot, you should follow the following steps.
+First, run the program 'get_data' to turn file 'trans_result_sep_latter.xlsx' into 'cate_res_trans_note.xlsx'.
+notes: (1)'trans_result_sep_latter.xlsx' is an excel file and the columns from right to left are 
+          'the category of this gene', 'the name of this gene' and 'the GO note of this gene'.
+       (2)'cate_res_trans_note.xlsx' is the excel that will be used in the plot-painting program 'draw_volcanic_plot'
+Second, run the program 'draw_volcanic_plot' to get volcanic plots between two different categories, which show the result of GO enrichment between two categories.
+notes: (1)the x axis is 'log2 Fold Change' which reveals the count of GO difference between cateA and cateB.
+       (2)the y axis is -log10(p.adjust)
+      
