@@ -1,10 +1,6 @@
 """
 This program intends to calculate difference between two categories(e.g. cate1 & cate2)
-The output is an Excel file which columns are category,Description,GeneRatio,BgRatio,pvalue,p.adjust,qvalue,geneID,count,annotation
-
-dict_go:
-dict that containing annotations to each GO ID in the largest GO dataset cross species
-In format {GO:xxxx :Annotation of the GO ID, ...}
+The output is an Excel file which columns are category,Description,GeneRatio,BgRatio,pvalue,p.adjust,qvalue,geneID,count
 """
 import pandas as pd
 from scipy.stats import hypergeom #引入超几何分布检验
