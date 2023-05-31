@@ -86,21 +86,12 @@ def draw_each_sheet(each_sheet_df,sheet_name,num,all_num):
     plt.close()
     print(f'已完成{num/all_num*100}%')
 
+
 def painter(excel_name):
     #引入基因数据
     GO_df = pd.ExcelFile(excel_name) #将全部的数据读入
     for i,sheet_name in enumerate(GO_df.sheet_names):
         draw_each_sheet(GO_df.parse(sheet_name),sheet_name,i+1,len(GO_df.sheet_names))
-
-def main(excel_name,excel_type,file_name):
-    parent_dir = 'volcanic_data'
-    global dir_name
-    dir_name = parent_dir + '/' + excel_type +'_'+'pattern_charts'+'_'+'latter'
-    if not os.path.exists(dir_name):
-        os.makedirs(dir_name)
-    global annotation_dic
-    annotation_dic = get_both_annotation(file_name)
-    painter(excel_name)
 
 def get_both_annotation(file_name):
     all_sheets = pd.ExcelFile(file_name)
@@ -113,10 +104,20 @@ def get_both_annotation(file_name):
                 annotation_dic[i[0]] = i[1]
     return annotation_dic
 
+def main(excel_name,excel_type,file_name):
+    parent_dir = 'volcanic_data'
+    global dir_name
+    dir_name = parent_dir + '/' + excel_type +'_'+'pattern_charts'+'_'+'latter'
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    global annotation_dic
+    annotation_dic = get_both_annotation(file_name)
+    painter(excel_name)
 
 if __name__ == '__main__':
     print('='*80)
     print('开始绘制转录组')
+    parent_dir = 'volcanic_data'
     excel_name = 'volcanic/cate_res_trans_sep_latter.xlsx'
     file_name = 'dotplot/cate_res_trans_note.xlsx'
     excel_type = 'trans'
