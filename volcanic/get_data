@@ -7,12 +7,11 @@ dict that containing annotations to each GO ID in the largest GO dataset cross s
 In format {GO:xxxx :Annotation of the GO ID, ...}
 """
 import pandas as pd
-from SRT.process_module.data_initial_module.GOdic_yeast import dict_go
 from scipy.stats import hypergeom #引入超几何分布检验
 from statsmodels.stats import multitest #计算p.adjusted
 import math
 
-def get_sheet(excel_name,dict_go):
+def get_sheet(excel_name):
     """
     this function is used to read all sheets in the Excel file and add new column to each sheet input_data_C_F_P_sep
     :param excel_name: the name of input Excel file
@@ -21,11 +20,6 @@ def get_sheet(excel_name,dict_go):
     """
     # 读入excel
     excel_df = pd.read_excel(excel_name, sheet_name=None)
-    for sheet_name in excel_df:
-        note_ls = []  # record GO note
-        for i in excel_df[sheet_name]['GO']:
-            note_ls.append(dict_go[i])
-        excel_df[sheet_name]['annotation'] = note_ls  # add new column named annotation
     return excel_df,list(excel_df.keys())
 
 def get_detailed_group_data(id1,id2):
@@ -43,7 +37,7 @@ def get_detailed_group_data(id1,id2):
     cate_gene_number = len(set(excel_df[sheet_names[id1]]['gene'].tolist()))
     # calculate the number of genes in the cate(id1), using set() to remove repeated gene names
     for group,group_data in excel_df[sheet_names[id1]].groupby('GO'): # use .groupby('GO') to get the group sorted by different GO name
-        group_num_dic[group] = [[len(group_data),all_gene_number,cate_gene_number],'/'.join(group_data['gene'].tolist()),group_data['annotation'].tolist()[0]]
+        group_num_dic[group] = [[len(group_data),all_gene_number,cate_gene_number],'/'.join(group_data['gene'].tolist())]
 
     return group_num_dic,list(group_num_dic.keys())
 
@@ -58,7 +52,7 @@ def init_data(idx1,idx2):
     idx2_dic,idx2_keys = get_detailed_group_data(idx2,idx1)
     intersection_keys = list(set(idx1_keys).intersection(set(idx2_keys))) # get the names of intersection of GOs between cate1 and cate2
     final_ls = []
-    col_names = ['ID','log2 Fold Change','BgRatio','pvalue','p.adjust','count','geneID','annotation']
+    col_names = ['ID','log2 Fold Change','BgRatio','pvalue','p.adjust','count','geneID']
     # get the columns names which will be added in the dataframe
     for i in intersection_keys: # i is the gene in the intersection set between cate1 and cate2
         a = idx1_dic[i][0][0] # the number of genes noted this GO(i) in cate1
@@ -76,16 +70,16 @@ def init_data(idx1,idx2):
         p_value = p/2 # 由于计算的是双尾概率，因此除以2
         p_adjusted = multitest.multipletests(p,method='fdr_bh')[1]
         # if p_adjusted < 0.05: # p_adjust小于0.05认为具有显著性
-        ls = [i,math.log2(cate_num_a/cate_num_b),M/N,p_value,float(p_adjusted[0]),M,idx1_dic[i][1],idx1_dic[i][2]]
+        ls = [i,math.log2(cate_num_a/cate_num_b),M/N,p_value,float(p_adjusted[0]),M,idx1_dic[i][1]]
         final_ls.append(ls)
     final_df = pd.DataFrame(final_ls,columns=col_names) # 将列表改写为dataframe格式，并且指定其列名为col_names
     df_name = 'cate'+str(idx1+1)+' to '+ 'cate' + str(idx2+1)
     # 形成sheet的名字，意味着此为cate1与cate2之间的差异数据，由于cate2对cate1也是这样的数据，因此不用在意名称中的先后顺序
     return final_df,df_name
 
-def res_output(file_path,dict_go,save_path):
+def res_output(file_path,save_path):
     global excel_df,sheet_names
-    excel_df, sheet_names = get_sheet(file_path,dict_go)
+    excel_df, sheet_names = get_sheet(file_path)
     with pd.ExcelWriter(save_path) as writer:
         for i in range(len(sheet_names)): # 由于1对1没有意义，因此在第二轮循环中从i+1开始
             if i < 8:   # 循环顺序为：(1,2),(1,3),……,(1,8),(2,3),……,(2,8),……,(7,8)
@@ -96,6 +90,6 @@ def res_output(file_path,dict_go,save_path):
 if __name__ == '__main__':
     print('开始计算')
     print('正在计算转录组')
-    file_path1 = 'trans_result_sep_latter.xlsx'
-    save_path1 = 'cate_res_trans_sep_latter.xlsx'
-    res_output(file_path1, dict_go, save_path1)
+    file_path1 = r'volcanic\trans_result_sep_latter.xlsx'
+    save_path1 = 'volcanic\cate_res_trans_sep_latter.xlsx'
+    res_output(file_path1,save_path1)
