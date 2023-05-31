@@ -1,0 +1,155 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.colors as mcolors
+import os
+
+def excel_reader(your_file_path):
+    """
+    a function to read different sheets of your Excel file
+    :param your_file_path: the path of your file
+    :return: sheet_dic: a dic containing your datas in the form of dataframe
+    {sheet_name:dataframe,……}
+    """
+    excel_file = pd.ExcelFile(your_file_path)
+    sheet_dic = {}
+    for sheet_name in excel_file.sheet_names:
+        sheet_data = excel_file.parse(sheet_name)
+        sheet_dic[sheet_name] = sheet_data.sort_values(by='GeneRatio',ascending=True)
+    sheet_dic_key = list(sheet_dic.keys())
+    return sheet_dic,sheet_dic_key
+
+def draw(sheet_data_input,chart_title,excel_type,dir_name):
+    """
+    this is a function which is capable of drawing bubble chart
+    :param sheet_data: input_data_C_F_P_sep dic obtained
+    :param chart_title: use keys of input_data_C_F_P_sep dic(e.g. Category 1……) to name the legend of whole chart
+    :param excel_name: input pro or trans to classify different categories between pro and trans
+    :param dir_name: the name of dir which stores pattern_charts
+    :return:
+    """
+    # 构造数据，其中 x 和 y 分别是气泡图中气泡的 x 和 y 坐标，size 是气泡的大小，values 是气泡对应的数值
+    sheet_data = sheet_data_input.sort_values(by='p.adjust',ascending=False)
+
+    x_init = [(i,j) for i,j in zip(sheet_data['GeneRatio'],sheet_data['BgRatio'])]
+    # 将分数转化为小数
+    float_ls = []
+    for i in x_init:
+        float_num = round((float(i[0].split('/')[0])*float(i[1].split('/')[1]))/(float(i[0].split('/')[1])*float(i[1].split('/')[0])),2)
+        float_ls.append(float_num)
+    x = np.array(float_ls) ##x值改为GeneRation/BgRation = Fold Enrichment## by Guangyuan
+    y = np.arange(1,len(x)+1,1)
+    size_note = np.array(sheet_data['Count'])
+    size_draw = size_note*10
+    values = -np.log10(np.array(sheet_data['p.adjust'])) ##用p.adjust还是q value可以再考虑考虑## by Guangyuan
+
+    y_init_annotations = sheet_data['annotation']
+    y_processed = [i.split('(')[0] for i in y_init_annotations]
+    # 由于有一个注释：maturation of SSU-rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)
+    # 该注释长度也过大：endonucleolytic cleavage in ITS1 to separate SSU-rRNA from 5.8S rRNA and LSU-rRNA from tricistronic rRNA transcript (SSU-rRNA, 5.8S rRNA, LSU-rRNA)
+    # 长度过大，因此删去（）内的内容
+    values_annotations = [i for i in np.round(values,2)]
+
+    # 定义一个颜色映射，将数值映射为颜色
+    colors = [(0.8,0.8,1), (1, 0, 0)]  # 深蓝色-深红色
+    cmap_name = 'my_list'
+    cm = mcolors.LinearSegmentedColormap.from_list(cmap_name, colors, N=256)
+
+    # 绘制气泡图
+    fig, ax = plt.subplots(2,1,figsize=(8, 6),gridspec_kw={'height_ratios': [2, 1]})
+    sc = ax[1].scatter(x, y, s=size_draw, c=values, cmap=cm, alpha=1)
+
+    # 为气泡添加注释（values的注释）
+    for i, txt in enumerate(values_annotations):
+        ax[1].annotate(txt, (x[i], y[i]), xytext=(12, 6),
+                           textcoords='offset points', ha='center',
+                           va='center', fontsize=4)
+
+    # 隐藏刻度线，设置刻度标签颜色和透明度
+    ax[1].tick_params(axis='both', which='both', length=0)
+
+    #修改坐标轴边框，使其淡化
+    spines_ls = ['left','right','top','bottom']
+    for i in spines_ls:
+        ax[1].spines[i].set_color('grey')
+        ax[1].spines[i].set_alpha(0.5)
+        ax[1].spines[i].set_linestyle('dashed')
+    #显示网格线，并且去掉y轴的坐标值，使坐标值仅仅显示在右侧
+    ax[1].grid(True, alpha=0.5) # alpha表示设置透明程度
+    ax[1].set_yticks(y)
+    ax[1].set_yticklabels(y_processed,fontsize=4)
+
+    # 设置颜色条
+    step = round((np.max(values)-np.min(values))/4,2)
+    if len(values) > 1:
+        if np.min(values) == np.max(values):
+            ls = [np.min(values)]
+        else:
+            ls = np.arange(np.min(values),np.max(values)+step,step,dtype=float)
+    else:
+        ls = [0,round(max(values),2)]
+
+    fig.colorbar(sc,ticks=ls).set_label('-log10(p.adjust)',fontsize=6)
+
+    # 添加气泡大小注释图
+    size_judge_array = np.sort(np.array(list(set(list(size_note)))))
+    drawn_ls = []
+    for i in range(len(size_note)):
+        if len(size_judge_array)<6:
+            if np.sort(size_note)[i] in size_judge_array and np.sort(size_note)[i] not in drawn_ls:
+                drawn_ls.append(np.sort(size_note)[i])
+                ax[0].scatter([],[],s=np.sort(size_draw)[i],
+                              label=str(round(np.sort(size_note)[i], 2)),
+                              alpha=0.5,c='red')
+        else:
+            for j in range(len(size_judge_array)):
+                if j%4 == 0:
+                    if np.sort(size_note)[i] == size_judge_array[j] and np.sort(size_note)[i] not in drawn_ls:
+                        drawn_ls.append(np.sort(size_note)[i])
+                        ax[0].scatter([], [], s=np.sort(size_draw)[i],
+                                      label=str(round(np.sort(size_note)[i], 2)),
+                                      alpha=0.5, c='red')
+    ax[0].legend(scatterpoints=1, frameon=False, labelspacing=2, title='Count')
+    ax[0].set_axis_off()
+
+    # 设定两个子图的位置参数
+    ax[0].set_position([0.75, 0.2, 0.1, 0.7])
+    ax[1].set_position([0.3, 0.1, 0.4, 0.8])
+
+    # 设定横纵坐标及标题
+    plt.xlabel("GeneRatio/BgRatio")
+    plt.title(chart_title)
+    # 显示图像
+    png_path = dir_name + '/' + chart_title + excel_type
+    plt.savefig(png_path,dpi=1024)
+
+
+def main(sheet_dic,sheet_dic_key,excel_type,parent_dir):
+    dir_name = parent_dir + '/' + excel_type+'_'+'charts'
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    for i in range(len(sheet_dic)):
+        if len(sheet_dic[sheet_dic_key[i]]) > 0:
+            draw(sheet_dic[sheet_dic_key[i]],sheet_dic_key[i],excel_type,dir_name)
+
+
+if __name__ == '__main__':
+    print('='*80)
+    print('开始读入数据')
+    # 读入数据
+    sheet_dic_pro, sheet_dic_key_pro = excel_reader(
+        'data/GA181_72h/output_excel_data_will_be_used_in_dotplot/GA181_cate_res_pro_note.xlsx')
+    sheet_dic_trans, sheet_dic_key_trans = excel_reader(
+        'data/GA181_72h/output_excel_data_will_be_used_in_dotplot/GA181_cate_res_trans_note.xlsx')
+
+    # 写入文件夹
+    print('='*80)
+    print('开始蛋白组绘图')
+    main(sheet_dic_pro, sheet_dic_key_pro,'pro', 'data/GA181_72h/output_charts_data')
+    print('='*80)
+    print('蛋白组绘图结束')
+    print('='*80)
+    print('开始转录组绘图')
+    main(sheet_dic_trans, sheet_dic_key_trans,'trans_latter', 'data/GA181_72h/output_charts_data')
+    print('='*80)
+    print('转录组绘图结束')
