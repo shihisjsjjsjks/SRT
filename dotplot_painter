@@ -145,6 +145,6 @@ if __name__ == '__main__':
     # 写入文件夹
     print('='*80)
     print('开始转录组绘图')
-    main(sheet_dic_trans, sheet_dic_key_trans,'trans_latter', 'data/output_charts_data')
+    main(sheet_dic_trans, sheet_dic_key_trans,'trans', 'data/output_charts_data')
     print('='*80)
     print('转录组绘图结束')
