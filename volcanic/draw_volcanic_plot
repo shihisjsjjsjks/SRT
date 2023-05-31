@@ -93,7 +93,7 @@ def painter(excel_name):
         draw_each_sheet(GO_df.parse(sheet_name),sheet_name,i+1,len(GO_df.sheet_names))
 
 def main(excel_name,excel_type,file_name):
-    parent_dir = 'volcanic_data/GA181_72h'
+    parent_dir = 'volcanic_data'
     global dir_name
     dir_name = parent_dir + '/' + excel_type +'_'+'pattern_charts'+'_'+'latter'
     if not os.path.exists(dir_name):
