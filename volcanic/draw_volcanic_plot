@@ -1,0 +1,125 @@
+"""
+this program intends to draw volcanic plot to show patterns in GO notes
+"""
+import copy
+import pandas as pd
+import matplotlib.pyplot as plt
+import math
+import numpy as np
+import os
+from collections import Counter
+
+def draw_each_sheet(each_sheet_df,sheet_name,num,all_num):
+    #设置画布
+    fig, ax = plt.subplots(figsize=(5, 10))
+
+    #先寻找出散点图中X、Y数据：
+    x_coordi = np.array(each_sheet_df['log2 Fold Change'])
+    y_coordi = -np.log10(np.array(each_sheet_df['p.adjust'])) 
+    GO_loc = each_sheet_df['ID']
+
+    #找出p.adjust<0.05的X、Y数据，并且找出在气泡图中也有标注的注释
+    loc = [i for i,data in enumerate(y_coordi) if data > -math.log10(0.05)]
+    x_coor = [x_coordi[i] for i in loc]
+    y_coor = [y_coordi[i] for i in loc]
+    x_y_loc_dic = {i_real:i_draw for i_draw,i_real in enumerate(loc)}
+    GO_annotation = [(i,annotation_dic[GO_loc[i]]) for i in loc if GO_loc[i] in list(annotation_dic.keys())]
+
+    # 再做出p.adjust<0.05的数据图，显示在气泡图中也出现的GO的注释
+
+    # 用于去除位置重叠的注释
+    record_ls = []
+    for i, data_first_loop in enumerate(GO_annotation):
+        for j, data_second_loop in enumerate(GO_annotation):
+            if abs(y_coor[x_y_loc_dic[GO_annotation[i][0]]] - y_coor[x_y_loc_dic[GO_annotation[j][0]]]) < 0.01 and i!=j:
+                record_ls.extend([i, j])
+    record_ls = list(set(record_ls))
+    loc_annotation = []
+    # 添加注释
+    for i, txt in enumerate(GO_annotation):
+        if i not in record_ls:
+            ax.annotate(GO_annotation[i][1],
+                        (x_coor[x_y_loc_dic[GO_annotation[i][0]]], y_coor[x_y_loc_dic[GO_annotation[i][0]]]),
+                        xytext=(6,0),
+                        textcoords='offset points', ha='left',
+                        va='center', fontsize=4)
+            loc_annotation.append(loc[x_y_loc_dic[GO_annotation[i][0]]])
+
+    for j, loct in enumerate(record_ls):
+        ax.annotate(GO_annotation[loct][1],
+                    (x_coor[x_y_loc_dic[GO_annotation[loct][0]]], y_coor[x_y_loc_dic[GO_annotation[loct][0]]]),
+                    xytext=(0, j*8),
+                    textcoords='offset points', ha='left',
+                    va='center', fontsize=4)
+        loc_annotation.append(loc[x_y_loc_dic[GO_annotation[loct][0]]])
+    # 绘制点
+    edgecolors = ['black' if i in loc_annotation else 'none' for i in range(len(x_coordi))]
+    size = [80 if i in loc_annotation else 30 for i in range(len(x_coordi))]
+
+    ax.scatter(x=x_coordi, y=y_coordi, c=x_coordi ,s=size, edgecolors=edgecolors)
+
+    # 开始设置x轴的取值范围，用来美化图像
+    x_min = min(-max(x_coordi),min(x_coordi))
+    x_max = max(max(x_coordi),-min(x_coordi))
+    # 设置与x轴平行的约束线和与y轴平行的约束线
+    y_restrict = -math.log10(0.05)
+    x_neg_restrict = -1
+    x_pos_restrict = 1
+    #寻找y轴最大、最小值，用以画x约束
+    y_min = 0
+    y_max = max(y_coordi)+1
+
+    ax.plot([x_min,x_max],[y_restrict,y_restrict],linestyle='--',color='black',lw=1) #设置y约束
+    ax.plot([x_neg_restrict,x_neg_restrict],[y_min,y_max],linestyle='--',color ='black',lw=1,alpha=0.5) #设置x负数约束
+    ax.plot([x_pos_restrict,x_pos_restrict],[y_min,y_max],linestyle='--',color ='black',lw=1,alpha=0.5) #设置x正数约束
+
+    plt.xlim(-0.5+min(-max(x_coordi),min(x_coordi)),0.5+max(max(x_coordi),-min(x_coordi)))
+    ax.tick_params(axis='both', which='both', length=0)
+    ax.set_xlabel('log2 Fold Change')
+    ax.set_ylabel('-log10(p.adjust)')
+
+    ax.grid(True,alpha=0.5)
+
+    #创建图片保存path
+    png_path = dir_name + '/' + sheet_name
+    plt.savefig(png_path,dpi=1024)
+    plt.close()
+    print(f'已完成{num/all_num*100}%')
+
+def painter(excel_name):
+    #引入基因数据
+    GO_df = pd.ExcelFile(excel_name) #将全部的数据读入
+    for i,sheet_name in enumerate(GO_df.sheet_names):
+        draw_each_sheet(GO_df.parse(sheet_name),sheet_name,i+1,len(GO_df.sheet_names))
+
+def main(excel_name,excel_type,file_name):
+    parent_dir = 'volcanic_data/GA181_72h'
+    global dir_name
+    dir_name = parent_dir + '/' + excel_type +'_'+'pattern_charts'+'_'+'latter'
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    global annotation_dic
+    annotation_dic = get_both_annotation(file_name)
+    painter(excel_name)
+
+def get_both_annotation(file_name):
+    all_sheets = pd.ExcelFile(file_name)
+    annotation_dic = {}
+    for sheet_name in all_sheets.sheet_names:
+        sheet_data = all_sheets.parse(sheet_name)
+        if len(sheet_data['ID']) != 0:
+            zipped_ls = [(i,j.lstrip()) for i,j in zip(sheet_data['ID'],sheet_data['annotation'])]
+            for i in zipped_ls:
+                annotation_dic[i[0]] = i[1]
+    return annotation_dic
+
+
+if __name__ == '__main__':
+    print('='*80)
+    print('开始绘制转录组')
+    excel_name = 'cate_res_trans_sep_latter.xlsx'
+    file_name = 'dotplot/cate_res_trans_note.xlsx'
+    excel_type = 'trans'
+    main(excel_name, excel_type, file_name)
+    print('='*80)
+    print('转录组绘制完毕')
