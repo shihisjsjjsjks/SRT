@@ -138,9 +138,9 @@ if __name__ == '__main__':
     print('开始读入数据')
     # 读入数据
     sheet_dic_pro, sheet_dic_key_pro = excel_reader(
-        'data/GA181_72h/output_excel_data_will_be_used_in_dotplot/GA181_cate_res_pro_note.xlsx')
+        'cate_res_pro_note.xlsx')
     sheet_dic_trans, sheet_dic_key_trans = excel_reader(
-        'data/GA181_72h/output_excel_data_will_be_used_in_dotplot/GA181_cate_res_trans_note.xlsx')
+        'cate_res_trans_note.xlsx')
 
     # 写入文件夹
     print('='*80)
