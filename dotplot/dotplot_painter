@@ -137,8 +137,6 @@ if __name__ == '__main__':
     print('='*80)
     print('开始读入数据')
     # 读入数据
-    sheet_dic_pro, sheet_dic_key_pro = excel_reader(
-        'cate_res_pro_note.xlsx')
     sheet_dic_trans, sheet_dic_key_trans = excel_reader(
         'cate_res_trans_note.xlsx')
 
