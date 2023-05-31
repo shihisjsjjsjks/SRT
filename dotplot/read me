@@ -1,0 +1,7 @@
+This program intends to turn the file 'cate_res_trans_note.xlsx' into visable dotplot pictures.
+Every dotpot picture includes:
+gene ratio (GeneRatio/BgRatio) as x axis
+-log10(p.adjust) as y axis and the value of y axis is replaced with the note of the GO
+the size of the data point is decided by the count of GO
+the color reavels -log10(p.adjust)
+
